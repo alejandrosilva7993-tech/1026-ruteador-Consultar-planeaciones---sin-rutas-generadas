@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consultar planeaciones · Sin rutas generadas</title>
+  <link rel="stylesheet" href="sidebar-icons.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/primeicons@7.0.0/primeicons.css" />
+  <style>
+    .card-title-route {
+      font-weight: 400;
+    }
+
+    .card-title-route .route-id-value {
+      font-weight: 700;
+      color: #4a5158;
+    }
+
+    /* Estado vacío de la tabla de rutas */
+    .routes-empty-row td {
+      padding: 0;
+      border-bottom: 0;
+    }
+
+    .routes-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 220px;
+      padding: 40px 28px;
+      text-align: center;
+      color: #5c6670;
+      background: #fafbfc;
+    }
+
+    .routes-empty-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #eef2f6;
+      color: #7a8794;
+      margin-bottom: 4px;
+    }
+
+    .routes-empty-icon .pi {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .routes-empty-title {
+      margin: 0;
+      font-size: clamp(15px, 1.2vw, 17px);
+      font-weight: 700;
+      color: #2f3640;
+      line-height: 1.3;
+    }
+
+    .routes-empty-text {
+      margin: 0;
+      max-width: 360px;
+      font-size: clamp(13px, 1.05vw, 14.5px);
+      line-height: 1.45;
+      color: #6a737c;
+    }
+
+    /* Modal de error / advertencia (mismo patrón que “Órdenes no divididas”) */
+    .modal-warning {
+      width: min(440px, 100%);
+      border-radius: 8px;
+    }
+
+    .warning-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 36px 28px 28px;
+      gap: 14px;
+    }
+
+    .warning-icon {
+      display: grid;
+      place-items: center;
+      margin-bottom: 4px;
+    }
+
+    .warning-title {
+      margin: 0;
+      font-size: clamp(22px, 2vw, 28px);
+      font-weight: 700;
+      color: #2f3640;
+      line-height: 1.2;
+    }
+
+    .warning-message {
+      margin: 0 0 8px;
+      font-size: clamp(14px, 1.15vw, 16px);
+      color: #5c6670;
+      line-height: 1.5;
+      max-width: 340px;
+    }
+
+    .btn-warning-ok {
+      min-width: 120px;
+      height: var(--btn-h);
+      min-height: var(--btn-h);
+      padding: 0 28px;
+      border: 0;
+      border-radius: 4px;
+      background: #4aa3df;
+      color: #fff;
+      font-size: clamp(13px, 1.05vw, 15px);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-warning-ok:hover {
+      background: #3b92cd;
+    }
+
+    .detail-actions.is-disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop" role="img" aria-label="Ruteador - Netlogistik">
+    <div class="app">
+      <div class="app-chrome" aria-hidden="false">
+        <div class="sidebar-top">
+          <button class="icon-btn" type="button" aria-label="Menú">
+            <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+          </button>
+        </div>
+        <header class="topbar">
+          <button class="icon-btn logout" type="button" aria-label="Salir">
+            <i class="fa fa-sign-out-alt" aria-hidden="true"></i>
+          </button>
+        </header>
+      </div>
+
+      <div class="app-body">
+      <aside class="sidebar" aria-label="Navegación principal">
+        <nav class="sidebar-nav" aria-label="Módulos">
+          <button class="nav-item nav-profile" type="button" aria-label="Perfil">
+            <i class="fa fa-user-circle" aria-hidden="true"></i>
+          </button>
+
+          <div class="nav-rule" aria-hidden="true"></div>
+
+          <button class="nav-item" type="button" aria-label="Inicio">
+            <i class="fas fa-home" aria-hidden="true"></i>
+          </button>
+
+          <div class="nav-dots" aria-hidden="true" title="Rutas">
+            <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+          </div>
+
+          <button class="nav-item" type="button" aria-label="Generar rutas">
+            <i class="fas fa-route" aria-hidden="true"></i>
+          </button>
+          <button class="nav-item" type="button" aria-label="Consultar planeaciones generadas">
+            <i class="fas fa-list" aria-hidden="true"></i>
+          </button>
+          <button class="nav-item is-active" type="button" aria-label="Mapa" aria-current="page">
+            <img class="nav-icon-svg" src="icon-consultar.svg" alt="" width="18" height="18" />
+          </button>
+
+          <div class="nav-dots" aria-hidden="true" title="Configuración">
+            <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+          </div>
+
+          <button class="nav-item" type="button" aria-label="Clientes">
+            <i class="fas fa-suitcase" aria-hidden="true"></i>
+          </button>
+          <button class="nav-item" type="button" aria-label="Usuarios">
+            <i class="fas fa-users" aria-hidden="true"></i>
+          </button>
+          <button class="nav-item" type="button" aria-label="Tipo de vehículos">
+            <i class="fas fa-truck-moving" aria-hidden="true"></i>
+          </button>
+          <button class="nav-item" type="button" aria-label="Almacenes">
+            <i class="fas fa-building" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="main">
+        <div class="main-scroll">
+          <div class="page-banner" id="page-banner">
+            <section class="page-header">
+              <div class="page-header-text">
+                <h1 id="page-title">Ver detalle de planeación</h1>
+                <p id="page-subtitle">Plan 1</p>
+              </div>
+              <button id="btn-regresar" class="btn-regresar" type="button">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Regresar
+              </button>
+            </section>
+          </div>
+
+        <!-- Detalle de planeación: sin rutas generadas -->
+        <div class="content content-detail" id="view-detail">
+          <div class="detail-stack">
+            <section class="card card-compact">
+              <h2 class="card-title card-title-route">Indicadores de ruta <span class="route-id-value" id="detail-route-id">R00282</span></h2>
+              <div class="indicators" id="detail-indicators">
+                <div class="indicator">
+                  <span class="indicator-label">Órdenes totales seleccionadas</span>
+                  <div class="indicator-value" data-key="selected">10</div>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Órdenes totales asignadas</span>
+                  <div class="indicator-value" data-key="assigned">0</div>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Órdenes totales divididas</span>
+                  <div class="indicator-value" data-key="split">0</div>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Órdenes totales descartadas</span>
+                  <a
+                    class="indicator-value indicator-link"
+                    href="#card-discarded"
+                    id="indicator-discarded-link"
+                    data-key="discarded"
+                  >10</a>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Porcentaje de órdenes asignadas</span>
+                  <div class="indicator-value" data-key="pct">0%</div>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Cantidad de rutas generadas</span>
+                  <div class="indicator-value" data-key="routes">0</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card card-compact card-routes">
+              <h2 class="card-title">Rutas generadas</h2>
+              <p class="routes-hint">
+                <svg class="routes-hint-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M12 10.5v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <circle cx="12" cy="7.5" r="1.1" fill="currentColor"/>
+                </svg>
+                <span><strong>Para que las órdenes vuelvan a estar disponibles</strong>, debes rechazar la ruta a la que están ligadas.</span>
+              </p>
+              <div class="routes-table-shell">
+                <div class="table-wrap table-scroll routes-scroll">
+                  <table class="detail-table routes-table">
+                    <thead>
+                      <tr>
+                        <th class="th-expand"></th>
+                        <th class="th-check">
+                          <input type="checkbox" id="routes-check-all" aria-label="Seleccionar todas" disabled />
+                        </th>
+                        <th>Tipo de vehículo</th>
+                        <th>Placas</th>
+                        <th>Vol. máx. vehículo (m³)</th>
+                        <th>Peso máx. vehículo (kg)</th>
+                        <th>Vol. real de ruta (m³)</th>
+                        <th>Peso real de ruta (kg)</th>
+                        <th>Porcentaje de utilización por peso</th>
+                        <th>Órdenes en la ruta</th>
+                        <th class="th-action">Aceptar</th>
+                        <th class="th-action">Rechazar</th>
+                      </tr>
+                    </thead>
+                    <tbody id="routes-tbody">
+                      <tr class="routes-empty-row">
+                        <td colspan="12">
+                          <div class="routes-empty-state" role="status">
+                            <div class="routes-empty-icon" aria-hidden="true">
+                              <i class="pi pi-inbox"></i>
+                            </div>
+                            <p class="routes-empty-title">No hay rutas generadas</p>
+                            <p class="routes-empty-text">
+                              Esta planeación no produjo rutas.
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="detail-actions is-disabled" role="toolbar" aria-label="Acciones sobre rutas seleccionadas">
+                <div class="routes-bulk-actions">
+                  <div class="routes-bulk-btn-wrap">
+                    <span class="routes-selection-badge" data-selection-badge hidden aria-hidden="true">0</span>
+                    <button type="button" class="btn-aceptar" id="btn-bulk-accept" disabled>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true">
+                        <path d="M5 12l5 5L20 7"/>
+                      </svg>
+                      Aceptar
+                    </button>
+                  </div>
+                  <div class="routes-bulk-btn-wrap">
+                    <span class="routes-selection-badge" data-selection-badge hidden aria-hidden="true">0</span>
+                    <button type="button" class="btn-rechazar" id="btn-bulk-reject" disabled>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/>
+                      </svg>
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <nav class="pagination pagination-inline" aria-label="Paginación de rutas" id="routes-pagination">
+                <div class="pagination-left">
+                  <label class="page-size-label" for="routes-page-size">
+                    Registros por página
+                    <select id="routes-page-size" class="page-size-select" disabled>
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </label>
+                  <p class="pagination-info" id="routes-pagination-info">Mostrando 0–0 de 0</p>
+                </div>
+                <div class="pagination-controls">
+                  <button type="button" class="page-btn page-nav" id="routes-page-prev" aria-label="Página anterior" disabled>‹</button>
+                  <div class="page-numbers" id="routes-page-numbers"></div>
+                  <button type="button" class="page-btn page-nav" id="routes-page-next" aria-label="Página siguiente" disabled>›</button>
+                </div>
+              </nav>
+            </section>
+
+            <section class="card card-compact" id="card-discarded">
+              <h2 class="card-title">Órdenes descartadas</h2>
+              <div class="discarded-summary">
+                <div class="indicator">
+                  <span class="indicator-label">Total de órdenes descartadas</span>
+                  <div class="indicator-value" id="discarded-total">10</div>
+                </div>
+                <div class="indicator">
+                  <span class="indicator-label">Porcentaje de órdenes rechazadas</span>
+                  <div class="indicator-value" id="discarded-pct">100%</div>
+                </div>
+              </div>
+              <div class="table-wrap discarded-table-wrap">
+                <table class="detail-table discarded-table">
+                  <thead>
+                    <tr>
+                      <th>ID de la orden</th>
+                      <th>Peso (kg)</th>
+                      <th>Volumen (m³)</th>
+                      <th>Clase de entrega</th>
+                      <th>Familia / Familias</th>
+                      <th>Razón del descarte</th>
+                    </tr>
+                  </thead>
+                  <tbody id="discarded-tbody">
+                    <tr>
+                      <td>ORD-3001</td>
+                      <td>48</td>
+                      <td>62</td>
+                      <td>Estándar</td>
+                      <td>Abarrotes</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3002</td>
+                      <td>35</td>
+                      <td>44</td>
+                      <td>Estándar</td>
+                      <td>Bebidas</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3003</td>
+                      <td>52</td>
+                      <td>70</td>
+                      <td>Refrigerada</td>
+                      <td>Lácteos</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3004</td>
+                      <td>28</td>
+                      <td>36</td>
+                      <td>Estándar</td>
+                      <td>Limpieza</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3005</td>
+                      <td>41</td>
+                      <td>55</td>
+                      <td>Estándar</td>
+                      <td>Abarrotes / Bebidas</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3006</td>
+                      <td>33</td>
+                      <td>40</td>
+                      <td>Estándar</td>
+                      <td>Cuidado personal</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3007</td>
+                      <td>60</td>
+                      <td>78</td>
+                      <td>Refrigerada</td>
+                      <td>Congelados</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3008</td>
+                      <td>22</td>
+                      <td>30</td>
+                      <td>Estándar</td>
+                      <td>Abarrotes</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3009</td>
+                      <td>47</td>
+                      <td>58</td>
+                      <td>Estándar</td>
+                      <td>Bebidas</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                    <tr>
+                      <td>ORD-3010</td>
+                      <td>39</td>
+                      <td>51</td>
+                      <td>Estándar</td>
+                      <td>Limpieza / Cuidado personal</td>
+                      <td class="td-discard-reason">Excede la capacidad de los vehículos seleccionados</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <nav class="pagination pagination-inline" aria-label="Paginación de órdenes descartadas" id="discarded-pagination">
+                <div class="pagination-left">
+                  <label class="page-size-label" for="discarded-page-size">
+                    Registros por página
+                    <select id="discarded-page-size" class="page-size-select">
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </label>
+                  <p class="pagination-info" id="discarded-pagination-info">Mostrando 1–10 de 10</p>
+                </div>
+                <div class="pagination-controls">
+                  <button type="button" class="page-btn page-nav" id="discarded-page-prev" aria-label="Página anterior" disabled>‹</button>
+                  <div class="page-numbers" id="discarded-page-numbers">
+                    <button type="button" class="page-btn is-active" aria-current="page">1</button>
+                  </div>
+                  <button type="button" class="page-btn page-nav" id="discarded-page-next" aria-label="Página siguiente" disabled>›</button>
+                </div>
+              </nav>
+            </section>
+          </div>
+        </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de error: no cupieron las órdenes → sin rutas -->
+  <div class="modal-overlay" id="error-modal" role="presentation">
+    <div
+      class="modal modal-warning"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="error-modal-title"
+      aria-describedby="error-modal-message"
+    >
+      <div class="warning-content">
+        <div class="warning-icon" aria-hidden="true">
+          <svg viewBox="0 0 72 72" width="72" height="72">
+            <circle cx="36" cy="36" r="32" fill="none" stroke="#f0c4a0" stroke-width="3"/>
+            <path d="M36 22v22" fill="none" stroke="#e8a06a" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="36" cy="52" r="2.8" fill="#e8a06a"/>
+          </svg>
+        </div>
+        <h2 class="warning-title" id="error-modal-title">Sin rutas generadas</h2>
+        <p class="warning-message" id="error-modal-message">
+          No fue posible asignar las órdenes, pues exceden la capacidad de los vehículos seleccionados.
+        </p>
+        <button type="button" class="btn-warning-ok" id="error-modal-ok">De acuerdo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const modal = document.getElementById("error-modal");
+      const okBtn = document.getElementById("error-modal-ok");
+
+      function closeErrorModal() {
+        modal.hidden = true;
+      }
+
+      okBtn.addEventListener("click", closeErrorModal);
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) closeErrorModal();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && modal && !modal.hidden) closeErrorModal();
+      });
+
+      document.getElementById("indicator-discarded-link").addEventListener("click", (event) => {
+        event.preventDefault();
+        document.getElementById("card-discarded").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    })();
+  </script>
+</body>
+</html>
